@@ -29,7 +29,7 @@ class AutoHealMacro:
     
     def move_down(self):
         """Clean, straightforward downward movement"""
-        STEP_SIZE = 100
+        STEP_SIZE = 110
         total_steps = (self.look_down_amount + STEP_SIZE - 1) // STEP_SIZE
         movement_per_step = self.look_down_amount / total_steps
         

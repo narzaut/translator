@@ -24,7 +24,10 @@ HOTKEYS = {
     'select_area': 'ctrl+alt+x',
     'toggle_overlay': 'ctrl+alt+c',
     'clear_fields': 'ctrl+alt+d',
-    'copy_translation': 'ctrl+shift+c'
+    'copy_translation': 'ctrl+shift+c',
+    'trigger_auto_bubble': 'x',
+    'toggle_auto_bubble': 'ctrl+alt+l'
+    
 }
 
 SAVE_DEBUG_IMAGES = False

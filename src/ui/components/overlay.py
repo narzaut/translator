@@ -10,6 +10,8 @@ from src.core.ocr import OCRProcessor
 from src.core.openai import OpenAIChatAnalyzer
 from src.core.translator import TranslationService
 from src.config.settings import Settings
+from src.core.auto_bubble import AutoHealMacro
+
 from src.ui.components.area_selector import AreaSelector
 
 logger = logging.getLogger(__name__)
@@ -50,6 +52,7 @@ class TranslationOverlay(tk.Tk):
         ocr: OCRProcessor,
         translator: TranslationService,
         chat_analyzer: OpenAIChatAnalyzer,
+        macro: AutoHealMacro,
         settings: Settings
     ):
         super().__init__()
@@ -61,6 +64,7 @@ class TranslationOverlay(tk.Tk):
         self.chat_analyzer = chat_analyzer
         self.translator = translator
         self.settings = settings
+        self.macro = macro
         
         self.command_queue = queue.Queue()
         self.result_queue = queue.Queue()
@@ -102,6 +106,7 @@ class TranslationOverlay(tk.Tk):
         self.setup_buttons()
         
         self.setup_version_label()
+        self.setup_macro_status_label()
         
         for widget in (self.main_frame, self.translation_frame, self.input_frame):
             widget.bind("<Button-1>", self.start_drag)
@@ -135,6 +140,30 @@ class TranslationOverlay(tk.Tk):
         
         version_label.bind("<Button-1>", self.start_drag)
         version_label.bind("<B1-Motion>", self.do_drag)
+    
+    
+    def setup_macro_status_label(self):
+        """Setup auto bubble macro status label in bottom left"""
+        macro_label_config = OVERLAY_THEME['label'].copy()
+        macro_label_config['font'] = FONTS['small']
+        macro_label_config['fg'] = COLORS['text_secondary']
+        
+        macro_frame = tk.Frame(
+            self.main_frame,
+            bg=OVERLAY_THEME['frame']['bg']
+        )
+        macro_frame.pack(fill='x', pady=(5, 0))
+        
+        macro_text = f"Auto Bubble: {'OFF' if self.macro.paused else 'ON'}"
+        self.macro_label = tk.Label(
+            macro_frame,
+            text=macro_text,
+            **macro_label_config
+        )
+        self.macro_label.pack(side='left')
+        
+        self.macro_label.bind("<Button-1>", self.start_drag)
+        self.macro_label.bind("<B1-Motion>", self.do_drag)
     
     def setup_instructions(self):
         """Setup instructions label"""
@@ -362,6 +391,12 @@ class TranslationOverlay(tk.Tk):
                     self.clear_fields()
                 elif command == 'copy_translation':
                     self.copy_translation()
+                elif command == 'trigger_auto_bubble':
+                    self.macro.perform_heal_action()
+                elif command == 'toggle_auto_bubble':
+                    self.macro.toggle_pause()
+                    self.after(0, lambda: self._update_macro_status_text(f"Auto Bubble: {'OFF' if self.macro.paused else 'ON'}"))
+                    
         except queue.Empty:
             pass
         finally:
@@ -394,6 +429,11 @@ class TranslationOverlay(tk.Tk):
                 logger.error(f"Translation failed: {e}")
                 self.after(0, lambda: self._update_translation(f"Error: {str(e)}"))
                 self.after(0, lambda: self.loading_label.config(text=""))
+    
+    def _update_macro_status_text(self, result: str):
+        """Update translation UI in the main thread"""
+        self.macro_label.config(text=result)
+        self.deiconify()
     
     def _update_translation(self, result: str):
         """Update translation UI in the main thread"""

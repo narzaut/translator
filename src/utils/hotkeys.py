@@ -44,6 +44,13 @@ class HotkeyManager:
                 elif keyboard.is_pressed(HOTKEYS['copy_translation']):
                     self.app.command_queue.put('copy_translation')
                     time.sleep(0.3)
+                elif keyboard.is_pressed(HOTKEYS['trigger_auto_bubble']):
+                    self.app.command_queue.put('trigger_auto_bubble')
+                    time.sleep(0.3)
+                elif keyboard.is_pressed(HOTKEYS['toggle_auto_bubble']):
+                    self.app.command_queue.put('toggle_auto_bubble')
+                    time.sleep(0.3)
+                
             except Exception as e:
                 logger.error(f"Error in hotkey monitoring: {e}")
             time.sleep(0.1)
