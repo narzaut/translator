@@ -1,6 +1,4 @@
-import keyboard
 import time
-import sys
 import win32api
 import ctypes
 from win32con import KEYEVENTF_KEYUP
@@ -10,12 +8,49 @@ MOUSEEVENTF_MOVE = 0x0001
 class AutoHealMacro:
     def __init__(self):
         self.running = True
-        self.paused = False  # Add pause state
+        self.paused = False
         self.hotkey = 'x'
-        self.pause_hotkey = 'p'  # Add pause hotkey
-        self.look_down_amount = 4000
-        self.up_movement_ratio = 0.265
         
+        # Store current settings as properties
+        self._settings = {
+            'look_down_amount': 1800,
+            'up_movement_ratio': 0.7,
+            'move_down_step': 50,
+            'move_up_step': 10
+        }
+        
+    @property
+    def look_down_amount(self):
+        return self._settings['look_down_amount']
+    
+    @look_down_amount.setter
+    def look_down_amount(self, value):
+        self._settings['look_down_amount'] = value
+        
+    @property
+    def up_movement_ratio(self):
+        return self._settings['up_movement_ratio']
+    
+    @up_movement_ratio.setter
+    def up_movement_ratio(self, value):
+        self._settings['up_movement_ratio'] = value
+        
+    @property
+    def move_down_step(self):
+        return self._settings['move_down_step']
+    
+    @move_down_step.setter
+    def move_down_step(self, value):
+        self._settings['move_down_step'] = value
+        
+    @property
+    def move_up_step(self):
+        return self._settings['move_up_step']
+    
+    @move_up_step.setter
+    def move_up_step(self, value):
+        self._settings['move_up_step'] = value
+    
     def precise_sleep(self, duration):
         """More precise sleep using Windows timer"""
         start = time.perf_counter()
@@ -29,8 +64,7 @@ class AutoHealMacro:
     
     def move_down(self):
         """Clean, straightforward downward movement"""
-        STEP_SIZE = 110
-        total_steps = (self.look_down_amount + STEP_SIZE - 1) // STEP_SIZE
+        total_steps = (self.look_down_amount + self.move_down_step - 1) // self.move_down_step
         movement_per_step = self.look_down_amount / total_steps
         
         for _ in range(total_steps):
@@ -39,8 +73,7 @@ class AutoHealMacro:
     def move_up(self):
         """Upward movement with overshoot and correction"""
         up_amount = int(self.look_down_amount * self.up_movement_ratio)
-        STEP_SIZE = 10
-        total_steps = (up_amount + STEP_SIZE - 1) // STEP_SIZE
+        total_steps = (up_amount + self.move_up_step - 1) // self.move_up_step
         movement_per_step = up_amount / total_steps
 
         # Move up with overshoot
@@ -53,14 +86,12 @@ class AutoHealMacro:
         print(f"Macro {'paused' if self.paused else 'resumed'}")
     
     def perform_heal_action(self):
-        if self.paused:  # Skip if paused
+        if self.paused:
             return
             
         try:
-            # Clean look down
             self.move_down()
             
-            # Quick keypress sequence
             win32api.keybd_event(0x45, 0, 0, 0)  # Press E
             self.precise_sleep(0.05)
             win32api.keybd_event(0x45, 0, KEYEVENTF_KEYUP, 0)  # Release E
@@ -71,21 +102,7 @@ class AutoHealMacro:
             
             self.precise_sleep(0.05)
             
-            # Look up with overshoot and correction
             self.move_up()
             
         except Exception as e:
             print(f"Error during heal action: {e}")
-    
-    def start(self):
-        """Start the macro"""
-        print(f"\nAuto Heal Macro started!")
-        print(f"Press '{self.hotkey}' to heal")
-        print(f"Press '{self.pause_hotkey}' to pause/unpause")
-        print("Press 'F1' to exit.")
-        
-        keyboard.on_press_key(self.hotkey, lambda _: self.perform_heal_action())
-        keyboard.on_press_key(self.pause_hotkey, self.toggle_pause)  # Add pause hotkey
-        keyboard.wait('F1')
-        self.running = False
-        print("Macro stopped.")

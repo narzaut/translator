@@ -5,6 +5,7 @@ import queue
 import asyncio
 from src.config.constants import AVAILABLE_LANGUAGES
 from src.ui.styles.theme import OVERLAY_THEME, FONTS, COLORS
+from src.ui.components.macro_settings import MacroSettingsModal
 from src.core.capture import ScreenCapture
 from src.core.ocr import OCRProcessor
 from src.core.openai import OpenAIChatAnalyzer
@@ -154,16 +155,37 @@ class TranslationOverlay(tk.Tk):
         )
         macro_frame.pack(fill='x', pady=(5, 0))
         
+        # Left side with status
+        status_frame = tk.Frame(
+            macro_frame,
+            bg=OVERLAY_THEME['frame']['bg']
+        )
+        status_frame.pack(side='left')
+        
         macro_text = f"Auto Bubble: {'OFF' if self.macro.paused else 'ON'}"
         self.macro_label = tk.Label(
-            macro_frame,
+            status_frame,
             text=macro_text,
             **macro_label_config
         )
         self.macro_label.pack(side='left')
         
+        # Add settings button next to the status
+        settings_button = tk.Button(
+            status_frame,
+            text="⚙",
+            command=self.show_macro_settings,
+            **OVERLAY_THEME['button'],
+            width=3,
+            padx=2
+        )
+        settings_button.pack(side='left', padx=(5, 0))
+        
+        # Make everything draggable
         self.macro_label.bind("<Button-1>", self.start_drag)
         self.macro_label.bind("<B1-Motion>", self.do_drag)
+        settings_button.bind("<Button-1>", self.start_drag)
+        settings_button.bind("<B1-Motion>", self.do_drag)
     
     def setup_instructions(self):
         """Setup instructions label"""
@@ -360,6 +382,10 @@ class TranslationOverlay(tk.Tk):
         """Start window drag"""
         self._drag_start_x = event.x
         self._drag_start_y = event.y
+    
+    def show_macro_settings(self):
+        """Show macro settings modal"""
+        MacroSettingsModal(self, self.macro)
     
     def do_drag(self, event):
         """Handle window dragging"""
