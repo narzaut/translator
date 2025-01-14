@@ -3,6 +3,7 @@ from src.core.ocr import OCRProcessor
 from src.core.translator import TranslationService
 from src.core.openai import OpenAIChatAnalyzer
 from src.core.auto_bubble import AutoHealMacro
+from src.core.auto_clone import AutoCloneMacro
 from src.ui.components.overlay import TranslationOverlay
 from src.utils.hotkeys import HotkeyManager
 from src.config.settings import Settings
@@ -20,8 +21,9 @@ def main():
         ocr = OCRProcessor(settings.tesseract_path)
         translator = TranslationService()
         analyzer = OpenAIChatAnalyzer(OPEN_ROUTER_API_KEY, dev_mode=False)
-        macro = AutoHealMacro()
-        app = TranslationOverlay(capture, ocr, translator, analyzer, macro, settings)
+        auto_bubble_macro = AutoHealMacro()
+        auto_clone_macro = AutoCloneMacro()
+        app = TranslationOverlay(capture, ocr, translator, analyzer, auto_bubble_macro, auto_clone_macro, settings)
         app.toggle_overlay()
         hotkey_manager = HotkeyManager(app)
         hotkey_manager.start()

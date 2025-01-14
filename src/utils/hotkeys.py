@@ -21,8 +21,8 @@ class HotkeyManager:
         self.thread.start()
         
         # Register event handler specifically for the macro trigger
-        keyboard.on_press_key(HOTKEYS['trigger_auto_bubble'], 
-            lambda _: self._handle_macro_trigger('trigger_auto_bubble'))
+        keyboard.on_press_key(HOTKEYS['trigger_macro'], 
+            lambda _: self._handle_macro_trigger('trigger_macro'))
         
         # Register event handler specifically for the macro trigger
         keyboard.on_press_key(HOTKEYS['trigger_auto_double_bubble'], 

@@ -12,6 +12,7 @@ from src.core.openai import OpenAIChatAnalyzer
 from src.core.translator import TranslationService
 from src.config.settings import Settings
 from src.core.auto_bubble import AutoHealMacro
+from src.core.auto_clone import AutoCloneMacro
 
 from src.ui.components.area_selector import AreaSelector
 
@@ -53,10 +54,14 @@ class TranslationOverlay(tk.Tk):
         ocr: OCRProcessor,
         translator: TranslationService,
         chat_analyzer: OpenAIChatAnalyzer,
-        macro: AutoHealMacro,
+        auto_bubble_macro: AutoHealMacro,
+        auto_clone_macro: AutoCloneMacro,
         settings: Settings
     ):
         super().__init__()
+        
+        self.auto_bubble_macro = auto_bubble_macro
+        self.auto_clone_macro = auto_clone_macro
         
         self.async_helper = AsyncTkHelper(self)
         
@@ -65,7 +70,6 @@ class TranslationOverlay(tk.Tk):
         self.chat_analyzer = chat_analyzer
         self.translator = translator
         self.settings = settings
-        self.macro = macro
         
         self.command_queue = queue.Queue()
         self.result_queue = queue.Queue()
@@ -144,49 +148,77 @@ class TranslationOverlay(tk.Tk):
     
     
     def setup_macro_status_label(self):
-        """Setup auto bubble macro status label in bottom left"""
-        macro_label_config = OVERLAY_THEME['label'].copy()
-        macro_label_config['font'] = FONTS['small']
-        macro_label_config['fg'] = COLORS['text_secondary']
-        
+        """Setup macro controls with checkboxes"""
         macro_frame = tk.Frame(
             self.main_frame,
             bg=OVERLAY_THEME['frame']['bg']
         )
         macro_frame.pack(fill='x', pady=(5, 0))
         
-        # Left side with status
-        status_frame = tk.Frame(
+        # Left side with checkboxes
+        controls_frame = tk.Frame(
             macro_frame,
             bg=OVERLAY_THEME['frame']['bg']
         )
-        status_frame.pack(side='left')
+        controls_frame.pack(side='left')
+
+        # Variables for checkboxes
+        self.auto_bubble_var = tk.BooleanVar(value=not self.auto_bubble_macro.paused)
+        self.auto_clone_var = tk.BooleanVar(value=not self.auto_clone_macro.paused)
         
-        macro_text = f"Auto Bubble: {'OFF' if self.macro.paused else 'ON'}"
-        self.macro_label = tk.Label(
-            status_frame,
-            text=macro_text,
-            **macro_label_config
+        # Auto Bubble checkbox
+        auto_bubble_frame = tk.Frame(
+            controls_frame,
+            bg=OVERLAY_THEME['frame']['bg']
         )
-        self.macro_label.pack(side='left')
+        auto_bubble_frame.pack(side='left', padx=(0, 10))
         
-        # Add settings button next to the status
+        auto_bubble_cb = tk.Checkbutton(
+            auto_bubble_frame,
+            text="Auto Bubble",
+            variable=self.auto_bubble_var,
+            command=self.toggle_auto_bubble,
+            bg=OVERLAY_THEME['frame']['bg'],
+            fg=COLORS['text_secondary'],
+            selectcolor=COLORS['secondary'],
+            font=FONTS['small']
+        )
+        auto_bubble_cb.pack(side='left')
+        
+        # Auto Clone checkbox
+        auto_clone_frame = tk.Frame(
+            controls_frame,
+            bg=OVERLAY_THEME['frame']['bg']
+        )
+        auto_clone_frame.pack(side='left')
+        
+        auto_clone_cb = tk.Checkbutton(
+            auto_clone_frame,
+            text="Auto Clone",
+            variable=self.auto_clone_var,
+            command=self.toggle_auto_clone,
+            bg=OVERLAY_THEME['frame']['bg'],
+            fg=COLORS['text_secondary'],
+            selectcolor=COLORS['secondary'],
+            font=FONTS['small']
+        )
+        auto_clone_cb.pack(side='left')
+        
+        # Settings button
         settings_button = tk.Button(
-            status_frame,
+            controls_frame,
             text="⚙",
             command=self.show_macro_settings,
             **OVERLAY_THEME['button'],
             width=3,
             padx=2
         )
-        settings_button.pack(side='left', padx=(5, 0))
+        settings_button.pack(side='left', padx=(10, 0))
         
         # Make everything draggable
-        self.macro_label.bind("<Button-1>", self.start_drag)
-        self.macro_label.bind("<B1-Motion>", self.do_drag)
-        settings_button.bind("<Button-1>", self.start_drag)
-        settings_button.bind("<B1-Motion>", self.do_drag)
-    
+        for widget in (auto_bubble_frame, auto_clone_frame, settings_button):
+            widget.bind("<Button-1>", self.start_drag)
+            widget.bind("<B1-Motion>", self.do_drag)
     def setup_instructions(self):
         """Setup instructions label"""
         instructions_text = (
@@ -385,8 +417,8 @@ class TranslationOverlay(tk.Tk):
     
     def show_macro_settings(self):
         """Show macro settings modal"""
-        MacroSettingsModal(self, self.macro)
-    
+        MacroSettingsModal(self, self.auto_bubble_macro, self.auto_clone_macro)    
+        
     def do_drag(self, event):
         """Handle window dragging"""
         x = self.winfo_x() + (event.x - self._drag_start_x)
@@ -400,6 +432,20 @@ class TranslationOverlay(tk.Tk):
         self.attributes("-topmost", True)
         self.after(10, self.set_input_focus)
         self.after(100, lambda: self.attributes("-topmost", False))
+    
+    def toggle_auto_bubble(self):
+        """Toggle auto bubble macro and ensure auto clone is off"""
+        if self.auto_bubble_var.get():
+            self.auto_clone_var.set(False)
+            self.auto_clone_macro.paused = True
+        self.auto_bubble_macro.paused = not self.auto_bubble_var.get()
+
+    def toggle_auto_clone(self):
+        """Toggle auto clone macro and ensure auto bubble is off"""
+        if self.auto_clone_var.get():
+            self.auto_bubble_var.set(False)
+            self.auto_bubble_macro.paused = True
+        self.auto_clone_macro.paused = not self.auto_clone_var.get()
     
     def set_input_focus(self):
         """Set focus to the input field"""
@@ -417,8 +463,12 @@ class TranslationOverlay(tk.Tk):
                     self.clear_fields()
                 elif command == 'copy_translation':
                     self.copy_translation()
-                elif command == 'trigger_auto_bubble':
-                    self.macro.perform_heal_action()
+                elif command == 'trigger_macro':
+                    # Check which macro is active and trigger it
+                    if self.auto_bubble_var.get():
+                        self.auto_bubble_macro.perform_heal_action()
+                    elif self.auto_clone_var.get():
+                        self.auto_clone_macro.perform_sequence()
                 elif command == 'trigger_auto_double_bubble':
                     self.macro.perform_heal_action(double_heal=True)
                 elif command == 'toggle_auto_bubble':

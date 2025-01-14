@@ -2,14 +2,16 @@ import tkinter as tk
 from tkinter import ttk, messagebox
 from src.ui.styles.theme import OVERLAY_THEME, FONTS, COLORS
 from src.core.auto_bubble import AutoHealMacro
+from src.core.auto_clone import AutoCloneMacro
 
 class MacroSettingsModal(tk.Toplevel):
-    def __init__(self, parent, macro: AutoHealMacro):
+    def __init__(self, parent, auto_bubble_macro: AutoHealMacro, auto_clone_macro: AutoCloneMacro):
         super().__init__(parent)
-        self.macro = macro
+        self.auto_bubble_macro = auto_bubble_macro
+        self.auto_clone_macro = auto_clone_macro
         
         # Configure window
-        self.title("Auto Bubble Settings")
+        self.title("Macro Settings")
         self.configure(bg=OVERLAY_THEME['window']['bg'])
         self.attributes("-topmost", True)
         
@@ -35,37 +37,41 @@ class MacroSettingsModal(tk.Toplevel):
         )
         main_frame.pack(fill='both', expand=True)
         
-        # Title
-        tk.Label(
-            main_frame,
-            text="Auto Bubble Configuration",
-            font=FONTS['header'],
+        # Create notebook for tabs
+        notebook = ttk.Notebook(main_frame)
+        notebook.pack(fill='both', expand=True, pady=(0, 20))
+        
+        # Auto Bubble tab
+        bubble_frame = tk.Frame(
+            notebook,
             bg=OVERLAY_THEME['frame']['bg'],
-            fg=COLORS['text']
-        ).pack(pady=(0, 20))
-        
-        # Settings container
-        settings_frame = tk.Frame(
-            main_frame,
-            bg=OVERLAY_THEME['frame']['bg']
+            padx=10,
+            pady=10
         )
-        settings_frame.pack(fill='x')
+        notebook.add(bubble_frame, text='Auto Bubble')
         
-        # Create entries for each setting
-        self.entries = {}
+        # Auto Clone tab
+        clone_frame = tk.Frame(
+            notebook,
+            bg=OVERLAY_THEME['frame']['bg'],
+            padx=10,
+            pady=10
+        )
+        notebook.add(clone_frame, text='Auto Clone')
         
-        # Use current values from macro
-        settings = [
-            ('look_down_amount', 'Look Down Amount', self.macro.look_down_amount),
-            ('up_movement_ratio', 'Up Movement Ratio', self.macro.up_movement_ratio),
-            ('move_down_step', 'Move Down Step Size', self.macro.move_down_step),
-            ('move_up_step', 'Move Up Step Size', self.macro.move_up_step),
-            ('heal_delay', 'Heal Delay', self.macro.heal_delay)
+        # Setup entries for Auto Bubble
+        self.bubble_entries = {}
+        bubble_settings = [
+            ('look_down_amount', 'Look Down Amount', self.auto_bubble_macro.look_down_amount),
+            ('up_movement_ratio', 'Up Movement Ratio', self.auto_bubble_macro.up_movement_ratio),
+            ('move_down_step', 'Move Down Step Size', self.auto_bubble_macro.move_down_step),
+            ('move_up_step', 'Move Up Step Size', self.auto_bubble_macro.move_up_step),
+            ('heal_delay', 'Heal Delay', self.auto_bubble_macro.heal_delay)
         ]
         
-        for i, (setting_id, label, current_value) in enumerate(settings):
+        for setting_id, label, current_value in bubble_settings:
             frame = tk.Frame(
-                settings_frame,
+                bubble_frame,
                 bg=OVERLAY_THEME['frame']['bg']
             )
             frame.pack(fill='x', pady=(0, 10))
@@ -84,16 +90,47 @@ class MacroSettingsModal(tk.Toplevel):
                 width=10
             )
             entry.pack(side='right')
-            entry.insert(0, str(current_value))  # Use current value from macro
+            entry.insert(0, str(current_value))
             
-            self.entries[setting_id] = entry
+            self.bubble_entries[setting_id] = entry
+            
+        # Setup entries for Auto Clone
+        self.clone_entries = {}
+        clone_settings = [
+            ('sequence_delay', 'Key Sequence Delay', self.auto_clone_macro.sequence_delay)
+        ]
+        
+        for setting_id, label, current_value in clone_settings:
+            frame = tk.Frame(
+                clone_frame,
+                bg=OVERLAY_THEME['frame']['bg']
+            )
+            frame.pack(fill='x', pady=(0, 10))
+            
+            tk.Label(
+                frame,
+                text=f"{label}:",
+                bg=OVERLAY_THEME['frame']['bg'],
+                fg=COLORS['text'],
+                font=FONTS['small']
+            ).pack(side='left')
+            
+            entry = tk.Entry(
+                frame,
+                **OVERLAY_THEME['entry'],
+                width=10
+            )
+            entry.pack(side='right')
+            entry.insert(0, str(current_value))
+            
+            self.clone_entries[setting_id] = entry
         
         # Buttons
         button_frame = tk.Frame(
             main_frame,
             bg=OVERLAY_THEME['frame']['bg']
         )
-        button_frame.pack(fill='x', pady=(20, 0))
+        button_frame.pack(fill='x')
         
         tk.Button(
             button_frame,
@@ -110,14 +147,17 @@ class MacroSettingsModal(tk.Toplevel):
         ).pack(side='right')
         
     def save_settings(self):
-        """Save settings back to macro"""
+        """Save settings back to macros"""
         try:
-            # Update macro settings
-            self.macro.look_down_amount = int(self.entries['look_down_amount'].get())
-            self.macro.up_movement_ratio = float(self.entries['up_movement_ratio'].get())
-            self.macro.move_down_step = int(self.entries['move_down_step'].get())
-            self.macro.move_up_step = int(self.entries['move_up_step'].get())
-            self.macro.heal_delay = float(self.entries['heal_delay'].get())  # Add this line
+            # Update Auto Bubble settings
+            self.auto_bubble_macro.look_down_amount = int(self.bubble_entries['look_down_amount'].get())
+            self.auto_bubble_macro.up_movement_ratio = float(self.bubble_entries['up_movement_ratio'].get())
+            self.auto_bubble_macro.move_down_step = int(self.bubble_entries['move_down_step'].get())
+            self.auto_bubble_macro.move_up_step = int(self.bubble_entries['move_up_step'].get())
+            self.auto_bubble_macro.heal_delay = float(self.bubble_entries['heal_delay'].get())
+            
+            # Update Auto Clone settings
+            self.auto_clone_macro.sequence_delay = float(self.clone_entries['sequence_delay'].get())
             
             self.destroy()
             
@@ -125,8 +165,11 @@ class MacroSettingsModal(tk.Toplevel):
             messagebox.showerror(
                 "Invalid Input",
                 "Please ensure all values are numbers.\n\n"
-                "Look Down Amount: Integer\n"
-                "Up Movement Ratio: Decimal between 0 and 1\n"
-                "Step Sizes: Integer\n"
-                "Heal Delay: Decimal in seconds"  # Add this line
+                "Auto Bubble:\n"
+                "- Look Down Amount: Integer\n"
+                "- Up Movement Ratio: Decimal between 0 and 1\n"
+                "- Step Sizes: Integer\n"
+                "- Heal Delay: Decimal in seconds\n\n"
+                "Auto Clone:\n"
+                "- Sequence Delay: Decimal in seconds"
             )

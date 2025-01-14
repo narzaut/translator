@@ -25,7 +25,7 @@ HOTKEYS = {
     'toggle_overlay': 'ctrl+alt+c',
     'clear_fields': 'ctrl+alt+d',
     'copy_translation': 'ctrl+shift+c',
-    'trigger_auto_bubble': 'x',
+    'trigger_macro': 'x',
     'trigger_auto_double_bubble': 'z',
     'toggle_auto_bubble': 'ctrl+alt+l'
     

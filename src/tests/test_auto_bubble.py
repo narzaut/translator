@@ -48,7 +48,7 @@ class TestHotkeyChain(unittest.TestCase):
         keyboard.hook(key_logger)
         
         try:
-            # Simulate pressing 'x' (or whatever HOTKEYS['trigger_auto_bubble'] is set to)
+            # Simulate pressing 'x' (or whatever HOTKEYS['trigger_macro'] is set to)
             keyboard.press_and_release('x')
             
             # Give some time for the event to propagate
@@ -57,7 +57,7 @@ class TestHotkeyChain(unittest.TestCase):
             # Check if the command was put in the queue
             try:
                 command = self.command_queue.get_nowait()
-                self.assertEqual(command, 'trigger_auto_bubble')
+                self.assertEqual(command, 'trigger_macro')
             except queue.Empty:
                 self.fail("No command was queued after hotkey press")
             

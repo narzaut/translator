@@ -18,7 +18,7 @@ class AutoHealMacro:
             'up_movement_ratio': 0.97,
             'move_down_step': 25,
             'move_up_step': 10,
-            'heal_delay': 0.05
+            'heal_delay': 0.02
         }
         
     @property
