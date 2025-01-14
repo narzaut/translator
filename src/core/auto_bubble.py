@@ -10,13 +10,15 @@ class AutoHealMacro:
         self.running = True
         self.paused = False
         self.hotkey = 'x'
+        self.double_heal_hotkey = 'z'
         
         # Store current settings as properties
         self._settings = {
-            'look_down_amount': 1800,
-            'up_movement_ratio': 0.7,
-            'move_down_step': 50,
-            'move_up_step': 10
+            'look_down_amount': 1500,
+            'up_movement_ratio': 0.97,
+            'move_down_step': 25,
+            'move_up_step': 10,
+            'heal_delay': 0.05
         }
         
     @property
@@ -50,6 +52,14 @@ class AutoHealMacro:
     @move_up_step.setter
     def move_up_step(self, value):
         self._settings['move_up_step'] = value
+        
+    @property
+    def heal_delay(self):
+        return self._settings['heal_delay']
+    
+    @heal_delay.setter
+    def heal_delay(self, value):
+        self._settings['heal_delay'] = value
     
     def precise_sleep(self, duration):
         """More precise sleep using Windows timer"""
@@ -85,23 +95,39 @@ class AutoHealMacro:
         self.paused = not self.paused
         print(f"Macro {'paused' if self.paused else 'resumed'}")
     
-    def perform_heal_action(self):
+    def press_key(self, key_code, duration=0.05):
+        """Helper method to press and release a key"""
+        win32api.keybd_event(key_code, 0, 0, 0)
+        self.precise_sleep(duration)
+        win32api.keybd_event(key_code, 0, KEYEVENTF_KEYUP, 0)
+        
+    def press_shift(self, duration=0.05):
+        """Helper method to press and release shift"""
+        ctypes.windll.user32.keybd_event(0x10, 0x2A, 0, 0)
+        self.precise_sleep(duration)
+        ctypes.windll.user32.keybd_event(0x10, 0x2A, KEYEVENTF_KEYUP, 0)
+    
+    def heal_sequence(self, double_heal=False):
+        """Perform the healing key sequence"""
+        self.press_key(0x45)
+        self.precise_sleep(self.heal_delay)
+        self.press_shift()
+        
+        if double_heal:
+            self.precise_sleep(self.heal_delay * 2)
+            self.press_key(0x45)
+            self.precise_sleep(self.heal_delay)
+            self.press_shift()
+    
+    def perform_heal_action(self, double_heal=False):
+        """Perform the complete heal action sequence"""
         if self.paused:
             return
             
         try:
             self.move_down()
-            
-            win32api.keybd_event(0x45, 0, 0, 0)  # Press E
-            self.precise_sleep(0.05)
-            win32api.keybd_event(0x45, 0, KEYEVENTF_KEYUP, 0)  # Release E
-            
-            ctypes.windll.user32.keybd_event(0x10, 0x2A, 0, 0)  # Press Left Shift
-            self.precise_sleep(0.05)
-            ctypes.windll.user32.keybd_event(0x10, 0x2A, KEYEVENTF_KEYUP, 0)  # Release Left Shift
-            
-            self.precise_sleep(0.05)
-            
+            self.heal_sequence(double_heal)
+            self.precise_sleep(self.heal_delay)
             self.move_up()
             
         except Exception as e:

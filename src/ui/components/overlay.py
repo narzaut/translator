@@ -419,6 +419,8 @@ class TranslationOverlay(tk.Tk):
                     self.copy_translation()
                 elif command == 'trigger_auto_bubble':
                     self.macro.perform_heal_action()
+                elif command == 'trigger_auto_double_bubble':
+                    self.macro.perform_heal_action(double_heal=True)
                 elif command == 'toggle_auto_bubble':
                     self.macro.toggle_pause()
                     self.after(0, lambda: self._update_macro_status_text(f"Auto Bubble: {'OFF' if self.macro.paused else 'ON'}"))

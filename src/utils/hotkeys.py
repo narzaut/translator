@@ -22,7 +22,11 @@ class HotkeyManager:
         
         # Register event handler specifically for the macro trigger
         keyboard.on_press_key(HOTKEYS['trigger_auto_bubble'], 
-            lambda _: self._handle_macro_trigger())
+            lambda _: self._handle_macro_trigger('trigger_auto_bubble'))
+        
+        # Register event handler specifically for the macro trigger
+        keyboard.on_press_key(HOTKEYS['trigger_auto_double_bubble'], 
+            lambda _: self._handle_macro_trigger('trigger_auto_double_bubble'))
         
         logger.info("Hotkey monitoring started")
     
@@ -34,14 +38,12 @@ class HotkeyManager:
         keyboard.unhook_all()
         logger.info("Hotkey monitoring stopped")
     
-    def _handle_macro_trigger(self):
+    def _handle_macro_trigger(self, event: str):
         """Handle macro trigger events"""
         try:
-            current_time = time.time()
-            key = HOTKEYS['trigger_auto_bubble']
-            
+            current_time = time.time()            
             # Queue the command immediately
-            self.app.command_queue.put('trigger_auto_bubble')
+            self.app.command_queue.put(event)
             logger.debug(f"Macro trigger at {current_time}")
             
         except Exception as e:

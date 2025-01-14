@@ -59,7 +59,8 @@ class MacroSettingsModal(tk.Toplevel):
             ('look_down_amount', 'Look Down Amount', self.macro.look_down_amount),
             ('up_movement_ratio', 'Up Movement Ratio', self.macro.up_movement_ratio),
             ('move_down_step', 'Move Down Step Size', self.macro.move_down_step),
-            ('move_up_step', 'Move Up Step Size', self.macro.move_up_step)
+            ('move_up_step', 'Move Up Step Size', self.macro.move_up_step),
+            ('heal_delay', 'Heal Delay', self.macro.heal_delay)
         ]
         
         for i, (setting_id, label, current_value) in enumerate(settings):
@@ -116,6 +117,7 @@ class MacroSettingsModal(tk.Toplevel):
             self.macro.up_movement_ratio = float(self.entries['up_movement_ratio'].get())
             self.macro.move_down_step = int(self.entries['move_down_step'].get())
             self.macro.move_up_step = int(self.entries['move_up_step'].get())
+            self.macro.heal_delay = float(self.entries['heal_delay'].get())  # Add this line
             
             self.destroy()
             
@@ -125,5 +127,6 @@ class MacroSettingsModal(tk.Toplevel):
                 "Please ensure all values are numbers.\n\n"
                 "Look Down Amount: Integer\n"
                 "Up Movement Ratio: Decimal between 0 and 1\n"
-                "Step Sizes: Integer"
+                "Step Sizes: Integer\n"
+                "Heal Delay: Decimal in seconds"  # Add this line
             )
