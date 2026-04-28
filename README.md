@@ -32,8 +32,8 @@ A real-time screen translation tool that captures text from any area of your scr
 
 1. **Clone or download this repository**
    ```bash
-   git clone https://github.com/yourusername/live-screen-translator.git
-   cd live-screen-translator
+   git clone https://github.com/narzaut/translator.git
+   cd translator
    ```
 
 2. **Create and activate a virtual environment**
